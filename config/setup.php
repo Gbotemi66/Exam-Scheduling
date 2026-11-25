@@ -9,7 +9,7 @@ require_once 'database.php';
 try {
     // Create database connection
     $database = new Database();
-    $db = $database->getConnection();
+    $db = $database->getServerConnection();
     
     echo "<h2>Setting up Exam Scheduling Database...</h2>\n";
     
@@ -37,11 +37,42 @@ try {
             }
         }
     }
+
+    $roleQuery = $db->prepare("SELECT role_id FROM roles WHERE role_name = ?");
+    $roleQuery->execute(['Admin']);
+    $adminRoleId = $roleQuery->fetchColumn();
+    if ($adminRoleId === false) {
+        throw new Exception("The Admin role was not created by the database schema.");
+    }
+
+    $adminUsername = 'admin';
+    $adminEmail = 'admin@unilag.edu.ng';
+    $adminPassword = 'admin123';
+
+    $adminQuery = $db->prepare("SELECT user_id FROM users WHERE username = ?");
+    $adminQuery->execute([$adminUsername]);
+    $adminExists = $adminQuery->fetchColumn() !== false;
+
+    if (!$adminExists) {
+        $insertAdmin = $db->prepare(
+            "INSERT INTO users (username, email, password_hash, first_name, last_name, role_id)
+             VALUES (?, ?, ?, 'System', 'Administrator', ?)"
+        );
+        $insertAdmin->execute([
+            $adminUsername,
+            $adminEmail,
+            password_hash($adminPassword, PASSWORD_DEFAULT),
+            $adminRoleId
+        ]);
+        echo "✓ Created default admin user.<br>\n";
+    } else {
+        echo "✓ Default admin user already exists; left its password unchanged.<br>\n";
+    }
     
     echo "<h3>✅ Database setup completed successfully!</h3>\n";
     echo "<p><a href='../login.php'>Go to Login Page</a></p>\n";
     echo "<p><strong>Default Admin Login:</strong><br>";
-    echo "Email: admin@unilag.edu.ng<br>";
+    echo "Username: admin<br>";
     echo "Password: admin123</p>\n";
     
 } catch (Exception $e) {

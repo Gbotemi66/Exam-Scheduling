@@ -7,14 +7,17 @@ class Database {
     public $conn;
 
     public function getConnection() {
-        $this->conn = null;
-        try {
-            $this->conn = new PDO("mysql:host=" . $this->host . ";dbname=" . $this->db_name, $this->username, $this->password);
-            $this->conn->exec("set names utf8");
-            $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        } catch(PDOException $exception) {
-            echo "Connection error: " . $exception->getMessage();
-        }
+        return $this->connect("mysql:host=" . $this->host . ";dbname=" . $this->db_name);
+    }
+
+    public function getServerConnection() {
+        return $this->connect("mysql:host=" . $this->host);
+    }
+
+    private function connect($dsn) {
+        $this->conn = new PDO($dsn, $this->username, $this->password);
+        $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $this->conn->exec("set names utf8");
         return $this->conn;
     }
 }
